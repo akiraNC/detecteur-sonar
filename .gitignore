@@ -1,0 +1,4 @@
+/sonar.all-data.csv
+.env
+README_local.md
+__pycache__/

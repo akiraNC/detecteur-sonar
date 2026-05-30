@@ -1,0 +1,95 @@
+name: Deploy to Hugging Face Space
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Récupérer le code complet
+      - name: Checkout code
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      # 2. Installer Python
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      # 3. Installer DVC + plugin GDrive + huggingface_hub
+      - name: Install dependencies
+        run: pip install dvc dvc-gdrive huggingface_hub
+
+      # 4. Configurer le Service Account Google pour DVC
+      - name: Configure DVC remote with Service Account
+        run: |
+          echo '${{ secrets.GDRIVE_SERVICE_ACCOUNT_JSON }}' > /tmp/service_account.json
+          dvc remote modify --local origin gdrive_use_service_account true
+          dvc remote modify --local origin gdrive_service_account_json_file_path /tmp/service_account.json
+
+      # 5. Récupérer le modèle depuis Google Drive
+      - name: Pull model from DVC
+        run: dvc pull modele/modele_sonar.pkl
+
+      # 6. Nettoyer l'infrastructure, EFFACER L'HISTORIQUE, et pusher vers HF Space
+      - name: Clean infrastructure and push code to Hugging Face Space
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          # 1. Remplacement par le README utilisateur
+          if [ -f README_HF.md ]; then
+            cp README_HF.md README.md
+          fi
+          
+          # 2. Nettoyage strict des dossiers et fichiers MLOps/interne
+          rm -rf .github/
+          rm -rf .dvc/
+          rm -f .dvcignore
+          rm -f README_HF.md
+          find . -name "*.dvc" -type f -delete
+          
+          # 3. LA MAGIE : On détruit le Git actuel et on en recrée un tout neuf
+          rm -rf .git
+          git init -b main
+          
+          git config --global user.email "action@github.com"
+          git config --global user.name "GitHub Actions"
+          
+          # 4. On ajoute les fichiers propres et on fait l'UNIQUE commit historique
+          git add -A
+          git commit -m "Production release"
+          
+          # 5. Expédition flash vers Hugging Face
+          git lfs install --skip-repo
+          git remote add hf https://psychoc4t:$HF_TOKEN@huggingface.co/spaces/psychoc4t/detecteur-sonar
+          git push hf main --force
+          
+      # 7. Uploader le modèle séparément via huggingface_hub
+      - name: Upload model to HF Space
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          python - <<'PYEOF'
+          import os
+          from huggingface_hub import HfApi
+          api = HfApi()
+          api.upload_file(
+              path_or_fileobj="modele/modele_sonar.pkl",
+              path_in_repo="modele/modele_sonar.pkl",
+              repo_id="psychoc4t/detecteur-sonar",
+              repo_type="space",
+              token=os.environ["HF_TOKEN"]
+          )
+          print("Modèle uploadé sur HF Space ✅")
+          PYEOF
+
+      # 8. Nettoyage des credentials
+      - name: Cleanup credentials
+        if: always()
+        run: rm -f /tmp/service_account.json

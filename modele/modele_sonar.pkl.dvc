@@ -1,0 +1,5 @@
+outs:
+- md5: 81a358dcb2f4e5c4e2b91b6073c617ef
+  size: 343065
+  hash: md5
+  path: modele_sonar.pkl
