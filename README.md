@@ -156,22 +156,3 @@ Vérifie que l'API et le modèle sont opérationnels.
 * 60 fréquences sonores (valeurs entre 0 et 1)
 * 111 mines / 97 roches
 * Source : [UCI Machine Learning Repository](https://archive.ics.uci.edu/dataset/151/connectionist+bench+sonar+mines+vs+rocks)
-
----
-
-## 🔄 Pipeline d'entraînement
-
-Pour ré-entraîner le modèle avec de nouvelles données :
-
-```bash
-# 1. Remplacer le dataset
-dvc add sonar.all-data.csv
-dvc push
-
-# 2. Lancer le notebook Colab
-# sonar_classification_colab.ipynb
-
-# 3. Le modèle est automatiquement versionné et déployé
-# via dvc push → git push → GitHub Actions → HF Space
-
-```

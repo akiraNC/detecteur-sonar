@@ -47,28 +47,39 @@ jobs:
             cp README_HF.md README.md
           fi
           
-          # 2. Nettoyage strict des dossiers et fichiers MLOps/interne
+          # 2. Nettoyage strict des dossiers, fichiers MLOps et fichiers inutiles pour HF
           rm -rf .github/
           rm -rf .dvc/
           rm -f .dvcignore
           rm -f README_HF.md
+          rm -f .gitignore       
+          rm -f .gitattributes   
           find . -name "*.dvc" -type f -delete
           
-          # 3. LA MAGIE : On détruit le Git actuel et on en recrée un tout neuf
+          # 3. OPTIMISATION : On déplace temporairement le modèle hors du répertoire
+          # pour qu'il ne soit pas inclus dans le "git add -A" (évite le doublon)
+          mv modele/modele_sonar.pkl /tmp/modele_sonar.pkl
+          rm -rf modele/
+          
+          # 4. LA MAGIE : On détruit le Git actuel et on en recrée un tout neuf
           rm -rf .git
           git init -b main
           
           git config --global user.email "action@github.com"
           git config --global user.name "GitHub Actions"
           
-          # 4. On ajoute les fichiers propres et on fait l'UNIQUE commit historique
+          # 5. On ajoute les fichiers propres restants (sans le modèle, sans .gitignore, etc.)
           git add -A
           git commit -m "Production release"
           
-          # 5. Expédition flash vers Hugging Face
+          # 6. Expédition flash du code vers Hugging Face
           git lfs install --skip-repo
           git remote add hf https://psychoc4t:$HF_TOKEN@huggingface.co/spaces/psychoc4t/detecteur-sonar
           git push hf main --force
+          
+          # 7. Remise en place du modèle pour l'étape suivante d'upload API
+          mkdir -p modele
+          mv /tmp/modele_sonar.pkl modele/modele_sonar.pkl
           
       # 7. Uploader le modèle séparément via huggingface_hub
       - name: Upload model to HF Space
@@ -86,7 +97,7 @@ jobs:
               repo_type="space",
               token=os.environ["HF_TOKEN"]
           )
-          print("Modèle uploadé sur HF Space ✅")
+          print("Modèle uploadé sur HF Space via API ✅")
           PYEOF
 
       # 8. Nettoyage des credentials

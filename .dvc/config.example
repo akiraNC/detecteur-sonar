@@ -1,0 +1,6 @@
+[core]
+    remote = origin
+[remote "origin"]
+    url = gdrive://ID_DU_DOSSIER_GOOGLE_DRIVE
+    gdrive_client_id = VOTRE_CLIENT_ID_GOOGLE_CONSOLE.apps.googleusercontent.com
+    gdrive_client_secret = VOTRE_SECRET_CLIENT_GOOGLE_CONSOLE

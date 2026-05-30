@@ -2,3 +2,4 @@
 .env
 README_local.md
 __pycache__/
+.dvc/config
