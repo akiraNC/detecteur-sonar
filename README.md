@@ -105,7 +105,7 @@ docker run -p 7860:7860 -p 8000:8000 sonar-app
 ├── README.md                   # Documentation
 ├── .github/
 │   └── workflows/
-│       └── deploy.yml          # Pipeline CI/CD
+│       └── pipeline.yml          # Pipeline CI/CD
 ├── modele/
 │   └── modele_sonar.pkl.dvc    # Pointeur DVC (modèle sur Google Drive)
 └── sonar.all-data.csv.dvc      # Pointeur DVC (dataset sur Google Drive)
